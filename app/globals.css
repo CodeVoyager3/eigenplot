@@ -113,12 +113,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -129,6 +131,7 @@
     mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 90%, transparent 100%);
   }
+
   .mask-b-from-55\% {
     mask-image: linear-gradient(to bottom, transparent 0%, black 55%, black 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 55%, black 100%);

@@ -18,7 +18,7 @@ export default function Pricing() {
 
                 <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-3">
                     {/* Student Plan */}
-                    <Card className="flex flex-col border-border/50 bg-zinc-950/20">
+                    <Card className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
                         <CardHeader>
                             <CardTitle className="font-medium">Student</CardTitle>
                             <span className="my-3 block text-4xl font-bold">$0</span>
@@ -26,8 +26,8 @@ export default function Pricing() {
                         </CardHeader>
 
                         <CardContent className="space-y-4">
-                            <hr className="border-dashed border-zinc-800" />
-                            <ul className="list-outside space-y-3 text-sm text-zinc-400">
+                            <hr className="border-dashed border-border" />
+                            <ul className="list-outside space-y-3 text-sm text-muted-foreground">
                                 {[
                                     'Standard 2D/3D Graphing',
                                     '100 AI Semantic Prompts/mo',
@@ -51,7 +51,7 @@ export default function Pricing() {
                     </Card>
 
                     {/* Pro Researcher Plan */}
-                    <Card className="relative border-primary/50 bg-zinc-950/40 shadow-2xl shadow-primary/10">
+                    <Card className="relative flex flex-col border-primary shadow-2xl shadow-primary/10 bg-card z-10 scale-105 md:scale-105">
                         <span className="absolute inset-x-0 -top-3 mx-auto flex h-6 w-fit items-center rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground ring-1 ring-inset ring-white/20">
                             <Sparkles className="mr-1 size-3" />
                             Recommended
@@ -68,8 +68,8 @@ export default function Pricing() {
                             </CardHeader>
 
                             <CardContent className="space-y-4">
-                                <hr className="border-dashed border-zinc-700" />
-                                <ul className="list-outside space-y-3 text-sm">
+                                <hr className="border-dashed border-border" />
+                                <ul className="list-outside space-y-3 text-sm text-foreground">
                                     {[
                                         'Unlimited AI Semantic Input',
                                         'Advanced Vision OCR Digitization',
@@ -96,7 +96,7 @@ export default function Pricing() {
                     </Card>
 
                     {/* Lab/Enterprise Plan */}
-                    <Card className="flex flex-col border-border/50 bg-zinc-950/20">
+                    <Card className="flex flex-col border-border/50 bg-card/50 backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
                         <CardHeader>
                             <CardTitle className="font-medium">Lab & Team</CardTitle>
                             <div className="flex items-baseline gap-1 my-3">
@@ -107,8 +107,8 @@ export default function Pricing() {
                         </CardHeader>
 
                         <CardContent className="space-y-4">
-                            <hr className="border-dashed border-zinc-800" />
-                            <ul className="list-outside space-y-3 text-sm text-zinc-400">
+                            <hr className="border-dashed border-border" />
+                            <ul className="list-outside space-y-3 text-sm text-muted-foreground">
                                 {[
                                     'Everything in Pro Researcher',
                                     'Shared Workspace & Folders',

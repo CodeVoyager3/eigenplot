@@ -5,20 +5,66 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { useActionState } from 'react'
-import { login } from '@/app/auth/actions'
-
-const initialState = {
-    error: '',
-}
+import { useState, useEffect } from 'react'
+import { useSignIn, useAuth } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-    const [state, formAction, isPending] = useActionState(login, initialState)
+    const { isLoaded, signIn, setActive } = useSignIn()
+    const { isSignedIn } = useAuth()
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [error, setError] = useState('')
+    const [isPending, setIsPending] = useState(false)
+    const router = useRouter()
+
+    useEffect(() => {
+        if (isLoaded && isSignedIn) {
+            router.push('/dashboard')
+        }
+    }, [isLoaded, isSignedIn, router])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!isLoaded) return
+
+        setIsPending(true)
+        setError('')
+
+        try {
+            const result = await signIn.create({
+                identifier: email,
+                password,
+            })
+
+            if (result.status === 'complete') {
+                await setActive({ session: result.createdSessionId })
+                router.push('/dashboard')
+            } else {
+                console.error(JSON.stringify(result, null, 2))
+                setError('Something went wrong during sign in.')
+            }
+        } catch (err: any) {
+            console.error(JSON.stringify(err, null, 2))
+            setError(err.errors?.[0]?.message || 'Invalid email or password')
+        } finally {
+            setIsPending(false)
+        }
+    }
+
+    const handleOAuth = (strategy: 'oauth_google' | 'oauth_microsoft') => {
+        if (!isLoaded) return
+        signIn.authenticateWithRedirect({
+            strategy,
+            redirectUrl: '/sso-callback',
+            redirectUrlComplete: '/dashboard',
+        })
+    }
 
     return (
         <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
             <form
-                action={formAction}
+                onSubmit={handleSubmit}
                 className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]">
                 <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
                     <div className="text-center">
@@ -28,7 +74,7 @@ export default function LoginPage() {
                             className="mx-auto block w-fit">
                             <LogoIcon />
                         </Link>
-                        <h1 className="mb-1 mt-4 text-xl font-semibold">Sign In to Tailark</h1>
+                        <h1 className="mb-1 mt-4 text-xl font-semibold">Sign In to EigenPlot</h1>
                         <p className="text-sm">Welcome back! Sign in to continue</p>
                     </div>
 
@@ -37,13 +83,15 @@ export default function LoginPage() {
                             <Label
                                 htmlFor="email"
                                 className="block text-sm">
-                                Username
+                                Username / Email
                             </Label>
                             <Input
                                 type="email"
                                 required
                                 name="email"
                                 id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
 
@@ -59,7 +107,7 @@ export default function LoginPage() {
                                     variant="link"
                                     size="sm">
                                     <Link
-                                        href="#"
+                                        href="/forgot-password"
                                         className="link intent-info variant-ghost text-sm">
                                         Forgot your Password ?
                                     </Link>
@@ -71,14 +119,16 @@ export default function LoginPage() {
                                 name="pwd"
                                 id="pwd"
                                 className="input sz-md variant-mixed"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
 
-                        {state?.error && (
-                            <p className="text-red-500 text-sm">{state.error}</p>
+                        {error && (
+                            <p className="text-red-500 text-sm">{error}</p>
                         )}
 
-                        <Button className="w-full" disabled={isPending}>
+                        <Button className="w-full" disabled={isPending || !isLoaded}>
                             {isPending ? 'Signing In...' : 'Sign In'}
                         </Button>
                     </div>
@@ -92,7 +142,8 @@ export default function LoginPage() {
                     <div className="grid grid-cols-2 gap-3">
                         <Button
                             type="button"
-                            variant="outline">
+                            variant="outline"
+                            onClick={() => handleOAuth('oauth_google')}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="0.98em"
@@ -115,7 +166,8 @@ export default function LoginPage() {
                         </Button>
                         <Button
                             type="button"
-                            variant="outline">
+                            variant="outline"
+                            onClick={() => handleOAuth('oauth_microsoft')}>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="1em"
@@ -146,7 +198,7 @@ export default function LoginPage() {
                             asChild
                             variant="link"
                             className="px-2">
-                            <Link href="#">Create account</Link>
+                            <Link href="/signup">Create account</Link>
                         </Button>
                     </p>
                 </div>

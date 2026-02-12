@@ -33,7 +33,7 @@ export default async function ProjectPage({ params }: { params: { projectId: str
     return (
         <DashboardShell>
             <GraphProvider initialEquations={equations || []} projectId={params.projectId}>
-                <Sidebar activeProject={params.projectId} />
+                <Sidebar />
                 <ControlPanel />
                 <VisualizationPane />
             </GraphProvider>

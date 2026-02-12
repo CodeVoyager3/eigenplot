@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useGraph } from '@/hooks/use-graph';
 import * as math from 'mathjs';
 
-export function GraphCanvas() {
+export function GraphCanvas({ theme }: { theme?: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { equations, viewport, pan, zoom } = useGraph();
@@ -79,8 +79,8 @@ export function GraphCanvas() {
         if (isImplicit) {
             // Implicit Plotting via Marching Squares
             // Dynamic Grid resolution for consistent visual quality regardless of zoom
-            // Step every ~10 pixels
-            const stepPx = 10;
+            // Step every ~6 pixels
+            const stepPx = 6;
             const resX = Math.ceil(width / stepPx);
             const resY = Math.ceil(height / stepPx);
 
@@ -129,19 +129,12 @@ export function GraphCanvas() {
                     // Interpolation helper
                     // Returns normalized offset 0..1 along the edge
                     const interp = (v1: number, v2: number) => {
+                        // Protect against div by zero?
+                        if (Math.abs(v2 - v1) < 1e-9) return 0.5;
                         return (0 - v1) / (v2 - v1);
                     }
 
                     // Vertices relative to grid cell (0..1)
-                    // Bottom: (interp, 0), Right: (1, interp), Top: (interp, 1), Left: (0, interp)
-                    // Wait, standard marching squares table
-                    //   Edge 3 (Left)   v01 ----- v11   Edge 2 (Top)
-                    //                    |         |
-                    //   Edge 0 (Bottom) v00 ----- v10   Edge 1 (Right)
-                    // Note: My loop j goes yMin to yMax (Bottom to Top usually in math, but canvas y is inverted)
-                    // Let's stick to Math coordinates. x, y. 
-                    // (i,j) is bottom-left (math). (i, j+1) is top-left.
-                    // Vertices:
                     // P0: Bottom edge (between v00 and v10). x = x + dx*t
                     // P1: Right edge (between v10 and v11). y = y + dy*t
                     // P2: Top edge (between v01 and v11). x = x + dx*t
@@ -160,29 +153,6 @@ export function GraphCanvas() {
                     };
 
                     // Lookup table for Lines
-                    // Case 1: 0001 (BL>0) -> Cut Left & Bottom
-                    // Case 2: 0010 (BR>0) -> Cut Bottom & Right
-                    // Case 3: 0011 (BL,BR>0) -> Cut Left & Right
-                    // Case 4: 0100 (TR>0) -> Cut Top & Right
-                    // Case 5: 0101 (BL,TR>0) -> saddle: Left-Top & Bottom-Right ? Ambiguous. Standard: Left-Top, Bottom-Right
-                    // Case 6: 0110 (BR,TR>0) -> Cut Top & Bottom ? No, Cut Top & Bottom is 0110 ? Vertical split.
-
-                    // Simple logic without massive switch:
-                    // 1: P3-P0
-                    // 2: P0-P1
-                    // 3: P3-P1
-                    // 4: P1-P2
-                    // 5: P3-P2, P0-P1 (Saddle)
-                    // 6: P0-P2
-                    // 7: P3-P2
-                    // 8: P2-P3
-                    // 9: P0-P2
-                    // 10: P0-P3, P1-P2 (Saddle)
-                    // 11: P1-P2
-                    // 12: P3-P1
-                    // 13: P0-P1
-                    // 14: P3-P0
-
                     switch (caseIdx) {
                         case 1: drawLine(getP3(), getP0()); break;
                         case 2: drawLine(getP0(), getP1()); break;
@@ -208,6 +178,7 @@ export function GraphCanvas() {
             // Optimized for performance
 
             let firstPoint = true;
+            let lastPy = 0;
             const stepPixels = 2;
             const xRange = vp.xMax - vp.xMin;
 
@@ -224,10 +195,17 @@ export function GraphCanvas() {
                             ctx.moveTo(px, py);
                             firstPoint = false;
                         } else {
-                            ctx.lineTo(px, py);
+                            // Discontinuity check: Don't connect if jump is absurdly large (asymptote)
+                            // A jump larger than the entire canvas height usually indicates a discontinuity (e.g. 1/x, tan(x))
+                            if (Math.abs(py - lastPy) > height) {
+                                ctx.moveTo(px, py);
+                            } else {
+                                ctx.lineTo(px, py);
+                            }
                         }
+                        lastPy = py;
                     } else {
-                        firstPoint = true;
+                        firstPoint = true; // Break line on NaN/Infinity
                     }
                 } catch (e) {
                     firstPoint = true;
@@ -261,13 +239,13 @@ export function GraphCanvas() {
         if (stepMath / magnitude >= 5) niceStep = magnitude * 5;
 
         // Draw Vertical Lines
-        ctx.strokeStyle = '#e5e7eb'; // zinc-200 / border
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            ctx.strokeStyle = '#27272a'; // zinc-800
+        ctx.strokeStyle = '#E5E7EB'; // (Light mode: Gray-200 for "Major" grid lines)
+        if (theme === 'dark') {
+            ctx.strokeStyle = '#27272a'; // zinc-800 (Dark mode)
         }
 
         ctx.font = `${10 * dpr}px monospace`;
-        ctx.fillStyle = '#71717a'; // zinc-500
+        ctx.fillStyle = '#9ca3af'; // zinc-400 (Softer text)
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
 
@@ -277,13 +255,13 @@ export function GraphCanvas() {
             ctx.beginPath();
             // Axis color?
             if (Math.abs(x) < 1e-10) {
-                ctx.strokeStyle = '#000000'; // Dark axis
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = '#374151'; // Gray-700 (Softer than black for Axes)
+                if (theme === 'dark') {
+                    ctx.strokeStyle = '#e2e8f0'; // bright for dark mode
                 }
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.5; // Slightly finer
             } else {
-                ctx.strokeStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#27272a' : '#e5e7eb';
+                ctx.strokeStyle = theme === 'dark' ? '#27272a' : '#E5E7EB';
                 ctx.lineWidth = 1;
             }
 
@@ -292,7 +270,7 @@ export function GraphCanvas() {
             ctx.stroke();
 
             // Label
-            if (Math.abs(x) > 1e-10) { // Don't label 0 twice or on axis if cluttered
+            if (Math.abs(x) > 1e-10) {
                 ctx.fillText(x.toLocaleString(), px, height - (20 * dpr));
             }
         }
@@ -306,13 +284,13 @@ export function GraphCanvas() {
             const { py } = toPx(0, y, width, height, vp);
             ctx.beginPath();
             if (Math.abs(y) < 1e-10) {
-                ctx.strokeStyle = '#000000';
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    ctx.strokeStyle = '#ffffff';
+                ctx.strokeStyle = '#374151'; // Gray-700
+                if (theme === 'dark') {
+                    ctx.strokeStyle = '#e2e8f0';
                 }
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.5;
             } else {
-                ctx.strokeStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#27272a' : '#e5e7eb';
+                ctx.strokeStyle = theme === 'dark' ? '#27272a' : '#E5E7EB';
                 ctx.lineWidth = 1;
             }
 
@@ -364,7 +342,7 @@ export function GraphCanvas() {
         return () => {
             // cancelAnimationFrame(animationFrameId);
         };
-    }, [equations, viewport]); // Re-render when these change
+    }, [equations, viewport, theme]); // Re-render when these change
 
 
     // Interactions

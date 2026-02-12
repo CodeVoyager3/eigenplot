@@ -8,7 +8,7 @@ export default function CalculatorPage() {
     return (
         <DashboardShell>
             <GraphProvider>
-                <Sidebar activeProject="calculator" />
+                <Sidebar />
                 <ControlPanel />
                 <VisualizationPane />
             </GraphProvider>

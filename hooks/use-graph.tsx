@@ -21,6 +21,8 @@ interface GraphContextType {
     viewport: Viewport;
     addEquation: (expression: string) => void;
     removeEquation: (id: string) => void;
+    updateEquation: (id: string, expression: string) => void;
+    updateEquationColor: (id: string, color: string) => void;
     toggleVisibility: (id: string) => void;
     setViewport: (viewport: Viewport) => void;
     pan: (dx: number, dy: number) => void;
@@ -142,12 +144,22 @@ export function GraphProvider({ children, initialEquations = [], projectId }: { 
         });
     }, []);
 
+    const updateEquation = useCallback((id: string, expression: string) => {
+        setEquations(prev => prev.map(eq => eq.id === id ? { ...eq, expression } : eq));
+    }, []);
+
+    const updateEquationColor = useCallback((id: string, color: string) => {
+        setEquations(prev => prev.map(eq => eq.id === id ? { ...eq, color } : eq));
+    }, []);
+
     return (
         <GraphContext.Provider value={{
             equations,
             viewport,
             addEquation,
             removeEquation,
+            updateEquation,
+            updateEquationColor,
             toggleVisibility,
             setViewport,
             pan,
